@@ -1,0 +1,527 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OS Meme Edition — Remember November 2026</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#081426;color:white;font-family:Arial,sans-serif;text-align:center}
+header{padding:19px 8px;background:linear-gradient(100deg,#09234c,#087dc0,#09234c);font-size:23px;font-weight:bold}
+#rememberHeader{display:none;padding:12px;background:#071d36;color:#76eaff;font-weight:bold;font-size:21px}
+.panel{background:linear-gradient(145deg,#1c304c,#101d32);border:1px solid #42628b;border-radius:15px;padding:13px;margin:10px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat,.item{background:#0b192c;border:1px solid #304966;border-radius:10px;padding:11px}
+button{background:linear-gradient(#278be9,#0752ad);color:white;border:1px solid #54b9ff;border-radius:10px;padding:12px;margin:5px;font-size:15px;font-weight:bold}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.35}
+input{width:90%;padding:12px;border:1px solid #5082ae;border-radius:9px;font-size:16px;margin:5px;background:#0b192c;color:white}
+.enemy{font-size:75px;margin:8px}
+.bar{height:18px;background:#42516b;border-radius:20px;overflow:hidden;margin:9px}
+.fill{height:100%;background:linear-gradient(90deg,#25d66b,#9aff9d);width:100%;transition:width .2s}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.small{font-size:12px;color:#bbcee5}
+.hidden{display:none!important}
+.skipButton{background:linear-gradient(#8957df,#5122a2)}
+.resetButton{background:linear-gradient(#e74c3c,#9d1717)}
+#toast{position:fixed;bottom:15px;left:5%;width:90%;background:#061426;padding:14px;border:1px solid #3e91d5;border-radius:12px;display:none;z-index:20}
+#ending{position:fixed;inset:0;background:#061426;z-index:10;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px}
+#endingScene{font-size:80px}
+#playerAvatar{font-size:78px}
+#playerRemember{color:#75eaff;font-weight:bold;margin:8px}
+</style>
+</head>
+<body>
+
+<header>😂 OS MEME EDITION</header>
+<div id="rememberHeader">🐻‍❄️ Remember November 2026</div>
+
+<main id="game">
+
+<div class="panel stats">
+ <div class="stat">💰 Монеты<br><b id="money">30</b></div>
+ <div class="stat">❤️ Здоровье<br><b id="hp">100 / 100</b></div>
+ <div class="stat">⚔️ Урон<br><b id="damage">5</b></div>
+ <div class="stat">🏆 Уровень игры<br><b id="level">1</b></div>
+</div>
+
+<div class="panel">
+ <h3>Твой персонаж</h3>
+ <div id="playerAvatar">🧑</div>
+ <div id="playerRemember" class="hidden">Remember November 2026</div>
+ <div id="playerDescription" class="small">Твоё мемное приключение начинается!</div>
+</div>
+
+<div class="panel">
+ <h3>📊 Уровни прокачки</h3>
+ <div class="grid">
+  <div class="item">❤️ Здоровье<br><b id="healthLevel">0</b></div>
+  <div class="item">⚔️ Урон<br><b id="damageLevel">0</b></div>
+  <div class="item">🗡️ Оружие<br><b id="weaponLevel">0</b></div>
+ </div>
+</div>
+
+<div class="panel">
+ <h3>⚔️ Противник</h3>
+ <div class="enemy" id="enemyEmoji">😂</div>
+ <b id="enemyName"></b>
+ <div class="bar"><div class="fill" id="enemyBar"></div></div>
+ <div id="enemyHP"></div>
+ <div id="enemyDamage"></div>
+ <button id="destroyBtn" onclick="destroyEnemy()">💥 УНИЧТОЖИТЬ</button>
+ <div id="clickArea" class="hidden">
+  <p>Бей противника быстрыми нажатиями!</p>
+  <button style="font-size:24px;padding:22px" onclick="clickAttack()">👊 УДАР!</button>
+  <div id="clickCount"></div>
+ </div>
+ <div id="battleMessage" class="small"></div>
+</div>
+
+<div class="panel">
+ <h3>⏩ Пропуск противников</h3>
+ <div class="small">Пропускаются только враги, которых ты способен победить.</div>
+ <div class="grid">
+  <button class="skipButton" onclick="skipTo(10)">До 10</button>
+  <button class="skipButton" onclick="skipTo(50)">До 50</button>
+  <button class="skipButton" onclick="skipTo(100)">До 100</button>
+  <button class="skipButton" onclick="skipTo(199)">До 199</button>
+ </div>
+ <div id="skipMessage" class="small">Выбери пропуск.</div>
+ <button class="resetButton" onclick="fullReset()">🔄 ПОЛНЫЙ СБРОС ИГРЫ</button>
+</div>
+
+<div class="panel">
+ <h3>🛒 Магазин улучшений</h3>
+ <div class="grid">
+  <div class="item">❤️ Здоровье
+   <p class="small" id="healthInfo"></p>
+   <button onclick="buyHealth()">Улучшить</button>
+  </div>
+  <div class="item">⚔️ Урон
+   <p class="small" id="damageInfo"></p>
+   <button onclick="buyDamage()">Улучшить</button>
+  </div>
+  <div class="item">🗡️ Оружие
+   <p class="small" id="weaponInfo"></p>
+   <button onclick="buyWeapon()">Купить</button>
+  </div>
+  <div class="item">❤️ Лечение
+   <p class="small">+25 HP · 15 монет</p>
+   <button onclick="heal()">Лечиться</button>
+  </div>
+ </div>
+</div>
+
+<div class="panel">
+ <h3>🔐 Секретное меню</h3>
+ <div style="font-size:45px;cursor:pointer" onclick="tapAvatar()">🧑</div>
+ <div class="small">Нажми на аватар 5 раз, чтобы открыть меню.</div>
+ <div id="secret" class="hidden">
+  <input id="codeInput" placeholder="Введите секретный код">
+  <button onclick="redeemCode()">Активировать</button>
+  <p id="codeMessage"></p>
+ </div>
+</div>
+
+<div class="panel small">OS Meme Edition · Remember November 2026 · Автосохранение</div>
+</main>
+
+<div id="ending" class="hidden">
+ <div id="endingScene">🏆</div>
+ <h2 id="endingTitle"></h2>
+ <p id="endingText"></p>
+ <button onclick="closeEnding()">Продолжить</button>
+</div>
+<div id="toast"></div>
+
+<script>
+const SAVE_KEY="os_meme_edition_remember_2026_v3";
+
+function initialState(){
+ return {
+  money:30,hp:100,maxHp:100,damage:5,weapon:1,level:1,
+  healthLevel:0,damageLevel:0,weaponLevel:0,
+  freeHealth:3,freeDamage:3,freeWeapon:3,
+  healthBuys:0,weaponBuys:0,
+  adminVerified:false,bearUnlocked:false,
+  rememberCodeUsed:false
+ };
+}
+
+function load(){
+ try{
+  let s=JSON.parse(localStorage.getItem(SAVE_KEY));
+  if(s&&typeof s.level==="number")return {...initialState(),...s};
+ }catch(e){}
+ return initialState();
+}
+
+let S=load();
+let enemyHP=20,enemyMax=20,enemyDamage=1;
+let enemyName="",enemyEmoji="";
+let clickCount=0,avatarTaps=0,gameEnded=false;
+
+function $(id){return document.getElementById(id)}
+function save(){localStorage.setItem(SAVE_KEY,JSON.stringify(S))}
+function fmt(n){return Math.floor(n).toLocaleString("ru-RU")}
+
+function toast(t){
+ $("toast").textContent=t;
+ $("toast").style.display="block";
+ setTimeout(()=>$("toast").style.display="none",2000);
+}
+
+const regularEnemies=[
+ ["Мемный новичок","😂"],
+ ["Тролль","🤡"],
+ ["Кот-мем","🐱"],
+ ["Сигма","🗿"],
+ ["Дог-мем","🐶"],
+ ["Гигачад","💪"],
+ ["Нубик","👶"],
+ ["Скибиди","🚽"],
+ ["Хакер-мем","💻"],
+ ["Король мемов","👑"]
+];
+
+const bossEnemies=[
+ ["Мемный босс","👹"],
+ ["Король троллей","🤡"],
+ ["Гигачад-босс","🗿"],
+ ["Скибиди-босс","🚽"],
+ ["Легендарный мем","🔥"]
+];
+
+function isBearLevel(){return S.level===200}
+function isClickerLevel(){return S.level>200&&S.level<=400}
+
+function getEnemyData(level){
+ if(level===200){
+  return {name:"БЕЛЫЙ МЕДВЕДЬ",emoji:"🐻‍❄️",hp:250000,damage:100000,clicker:true,boss:true};
+ }
+ let boss=level%5===0;
+ let index=boss?Math.min(4,Math.floor(level/5)%5):Math.floor((level-1)/5)%10;
+ let e=boss?bossEnemies[index]:regularEnemies[index];
+ return {
+  name:e[0],emoji:e[1],
+  hp:30+level*18+(boss?level*25:0),
+  damage:2+Math.floor(level*1.5)+(boss?level*2:0),
+  clicker:level>200&&level<=400,boss
+ };
+}
+
+function updatePlayer(){
+ $("playerAvatar").textContent=S.bearUnlocked?"🐻‍❄️":"🧑";
+ $("playerRemember").classList.toggle("hidden",!S.bearUnlocked);
+ $("rememberHeader").style.display=S.bearUnlocked?"block":"none";
+ $("playerDescription").textContent=S.bearUnlocked?
+ "Белый Мишка — Remember November 2026":
+ "Твоё мемное приключение начинается!";
+}
+
+function createEnemy(){
+ clickCount=0;
+ let e=getEnemyData(S.level);
+ enemyName=e.name;enemyEmoji=e.emoji;
+ enemyMax=e.hp;enemyHP=enemyMax;enemyDamage=e.damage;
+ render();
+}
+
+function render(){
+ $("money").textContent=fmt(S.money);
+ $("hp").textContent=fmt(S.hp)+" / "+fmt(S.maxHp);
+ $("damage").textContent=fmt(S.damage);
+ $("level").textContent=S.level;
+ $("healthLevel").textContent=S.healthLevel;
+ $("damageLevel").textContent=S.damageLevel;
+ $("weaponLevel").textContent=S.weaponLevel;
+ $("enemyName").textContent=enemyName;
+ $("enemyEmoji").textContent=enemyEmoji;
+ $("enemyHP").textContent="Здоровье врага: "+fmt(Math.max(0,enemyHP))+" / "+fmt(enemyMax);
+ $("enemyDamage").textContent="Урон врага: "+fmt(enemyDamage);
+ $("enemyBar").style.width=Math.max(0,enemyHP/enemyMax*100)+"%";
+ $("clickCount").textContent="Удары: "+clickCount;
+
+ $("healthInfo").textContent=S.freeHealth>0?
+ "Бесплатно: "+S.freeHealth:
+ "Цена "+healthCost()+" · +"+healthAmount()+" HP";
+ $("damageInfo").textContent=S.freeDamage>0?
+ "Бесплатно: "+S.freeDamage:"Цена 15 · +5 урона";
+ $("weaponInfo").textContent=S.freeWeapon>0?
+ "Бесплатно: "+S.freeWeapon:"Цена "+weaponCost();
+
+ let clicker=isBearLevel()||isClickerLevel();
+ $("clickArea").classList.toggle("hidden",!clicker);
+ $("destroyBtn").classList.toggle("hidden",clicker);
+ $("battleMessage").textContent=clicker?
+ "Нажимай кнопку удара!":
+ (S.damage>enemyDamage?
+ "Твой урон выше урона врага — можно победить!":
+ "Твой урон должен быть выше "+enemyDamage+".");
+ $("destroyBtn").disabled=S.damage<=enemyDamage;
+ updatePlayer();
+}
+
+function healthCost(){return S.level<=15?15:15+S.healthBuys}
+function healthAmount(){return S.level<=15?5:15+Math.floor(S.healthBuys/2)}
+function weaponCost(){return 15+S.weaponBuys*10}
+
+function buyHealth(){
+ if(gameEnded)return;
+ if(S.freeHealth>0){
+  S.freeHealth--;S.healthLevel++;S.maxHp+=5;S.hp+=5;
+ }else{
+  let c=healthCost(),a=healthAmount();
+  if(S.money<c){toast("Не хватает монет!");return}
+  S.money-=c;S.healthLevel++;S.maxHp+=a;S.hp+=a;S.healthBuys++;
+ }
+ render();save();
+}
+
+function buyDamage(){
+ if(gameEnded)return;
+ if(S.freeDamage>0){
+  S.freeDamage--;S.damageLevel++;S.damage+=5;
+ }else{
+  if(S.money<15){toast("Нужно 15 монет!");return}
+  S.money-=15;S.damageLevel++;S.damage+=5;
+ }
+ render();save();
+}
+
+function buyWeapon(){
+ if(gameEnded)return;
+ if(S.freeWeapon>0){
+  S.freeWeapon--;S.weaponLevel++;S.weapon++;S.damage+=3;
+ }else{
+  let c=weaponCost();
+  if(S.money<c){toast("Не хватает монет!");return}
+  S.money-=c;S.weaponBuys++;S.weaponLevel++;S.weapon++;S.damage+=3;
+ }
+ render();save();
+}
+
+function heal(){
+ if(gameEnded)return;
+ if(S.hp>=S.maxHp){toast("Здоровье уже полное!");return}
+ if(S.money<15){toast("Нужно 15 монет!");return}
+ S.money-=15;S.hp=Math.min(S.maxHp,S.hp+25);
+ render();save();
+}
+
+function rewardCoins(level){
+ return level<=15?15:15+(Math.floor(level/5)-3)*5;
+}
+
+function destroyEnemy(){
+ if(gameEnded||isBearLevel()||isClickerLevel())return;
+ if(S.damage<=enemyDamage){toast("Урона недостаточно!");return}
+ winEnemy();
+}
+
+function clickAttack(){
+ if(gameEnded||(!isBearLevel()&&!isClickerLevel()))return;
+ clickCount++;
+ enemyHP-=Math.max(1,S.damage);
+ if(enemyHP<=0){winEnemy();return}
+ if(clickCount%10===0){
+  S.hp-=enemyDamage;
+  if(S.hp<=0){loseGame();return}
+ }
+ render();save();
+}
+
+function winEnemy(){
+ let defeatedLevel=S.level;
+ let e=getEnemyData(defeatedLevel);
+ let reward=e.boss?rewardCoins(defeatedLevel):Math.max(1,Math.floor(defeatedLevel/3));
+ S.money+=reward;
+
+ if(defeatedLevel===200){
+  S.bearUnlocked=true;
+  save();
+  showEnding("🐻‍❄️","БЕЛЫЙ МИШКА ПОБЕЖДЁН!","Теперь ты сам Белый Мишка! Remember November 2026!");
+  return;
+ }
+
+ if(defeatedLevel>=400){
+  save();
+  showEnding("🏆","ПОБЕДА!","Ты прошёл все 400 уровней OS Meme Edition!");
+  return;
+ }
+
+ S.level++;
+ if(S.hp<S.maxHp)S.hp=Math.min(S.maxHp,S.hp+5);
+ save();createEnemy();
+ toast("Победа! +"+fmt(reward)+" монет");
+}
+
+function loseGame(){
+ S.hp=0;gameEnded=true;save();
+ showEnding("💀","ТЫ ПРОИГРАЛ","Тебя победил "+enemyName+". Попробуй снова!");
+}
+
+function skipTo(target){
+ if(gameEnded)return;
+ if(S.level>=target){toast("Ты уже достиг этого уровня!");return}
+ if(S.level>=200){toast("Пропуск после 199 уровня недоступен!");return}
+ let passed=0,earned=0,stoppedAt=null;
+ while(S.level<target&&S.level<200){
+  let e=getEnemyData(S.level);
+  if(S.damage<=e.damage){stoppedAt=S.level;break}
+  let reward=e.boss?rewardCoins(S.level):Math.max(1,Math.floor(S.level/3));
+  S.money+=reward;earned+=reward;passed++;
+  S.level++;
+  if(S.hp<S.maxHp)S.hp=Math.min(S.maxHp,S.hp+5);
+ }
+ if(passed===0){
+  $("skipMessage").textContent="Не хватает урона для врага уровня "+S.level+".";
+  toast("Сначала улучши урон!");
+  render();save();return;
+ }
+ createEnemy();
+ $("skipMessage").textContent="Пропущено: "+passed+
+ ". Получено монет: "+earned+
+ (stoppedAt!==null?". Остановка на уровне "+stoppedAt+".":".");
+ render();save();
+}
+
+function fullReset(){
+ if(!confirm("Сбросить ВСЮ игру? Весь прогресс будет потерян."))return;
+ localStorage.removeItem(SAVE_KEY);
+ S=initialState();
+ gameEnded=false;clickCount=0;avatarTaps=0;
+ $("ending").classList.add("hidden");
+ $("game").classList.remove("hidden");
+ $("secret").classList.add("hidden");
+ $("codeInput").value="";
+ $("codeMessage").textContent="";
+ $("skipMessage").textContent="Игра сброшена!";
+ createEnemy();save();
+ toast("Полный сброс выполнен!");
+}
+
+function showEnding(scene,title,text){
+ gameEnded=true;
+ $("game").classList.add("hidden");
+ $("ending").classList.remove("hidden");
+ $("endingScene").textContent=scene;
+ $("endingTitle").textContent=title;
+ $("endingText").textContent=text;
+}
+
+function closeEnding(){
+ $("ending").classList.add("hidden");
+ $("game").classList.remove("hidden");
+ if(S.level===200&&S.bearUnlocked){
+  S.level=201;
+  S.hp=S.maxHp;
+ }
+ gameEnded=false;
+ createEnemy();save();
+}
+
+function tapAvatar(){
+ avatarTaps++;
+ if(avatarTaps>=5){
+  $("secret").classList.remove("hidden");
+  avatarTaps=0;
+  toast("Секретное меню открыто!");
+ }
+}
+
+function redeemCode(){
+ let code=$("codeInput").value.trim();
+ let msg=$("codeMessage");
+
+ if(code==="Remember November 2026"){
+  if(S.rememberCodeUsed){
+   msg.textContent="Этот тролль-код уже использован!";
+   return;
+  }
+
+  // ТРОЛЛЬ-КОД: фиксированные значения, не зависящие от прежнего баланса.
+  S.money=-1000;
+  S.healthLevel=-10;
+  S.damageLevel=-10;
+  S.weaponLevel=-10;
+
+  // Характеристики тоже становятся крайне слабыми.
+  S.maxHp=10;
+  S.hp=10;
+  S.damage=1;
+  S.weapon=-10;
+
+  // Убираем бесплатные улучшения и старые покупки.
+  S.freeHealth=0;
+  S.freeDamage=0;
+  S.freeWeapon=0;
+  S.healthBuys=0;
+  S.weaponBuys=0;
+
+  S.level=200;
+  S.bearUnlocked=false;
+  S.rememberCodeUsed=true;
+
+  gameEnded=false;
+  $("ending").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  createEnemy();render();save();
+
+  msg.textContent="😈 ТРОЛЛЬ! Баланс −1000, вся прокачка −10. Белый Мишка ждёт!";
+  toast("ТРОЛЛЬ-КОД АКТИВИРОВАН!");
+  return;
+ }
+
+ if(code==="gpt_1"){
+  if(!S.adminVerified){
+   let answer=prompt("Вы Админ?");
+   if(answer!=="Я ГАЗАН"){
+    msg.textContent="Проверка не пройдена!";
+    return;
+   }
+   S.adminVerified=true;
+  }
+  S.money=10000000000;
+  S.maxHp=10000000000;
+  S.hp=10000000000;
+  S.damage=10000000000;
+  render();save();
+  msg.textContent="Админские возможности активированы!";
+  return;
+ }
+
+ if(code==="star_zero"){
+  S.damage=1;
+  S.maxHp=100;
+  S.hp=100;
+  S.damageLevel=0;
+  render();save();
+  msg.textContent="Урон и здоровье сброшены!";
+  return;
+ }
+
+ // НОВЫЙ КОД: ГПТ — телепорт на 399 уровень.
+ if(code==="ГПТ"){
+  S.level=399;
+  gameEnded=false;
+  $("ending").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  createEnemy();
+  render();
+  save();
+  msg.textContent="🚀 Телепорт выполнен! Ты на 399 уровне!";
+  toast("СЕКРЕТНЫЙ КОД ГПТ АКТИВИРОВАН!");
+  return;
+ }
+
+ msg.textContent="Неверный код!";
+}
+
+createEnemy();
+render();
+save();
+</script>
+</body>
+</html>
